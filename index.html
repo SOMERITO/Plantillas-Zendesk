@@ -54,6 +54,7 @@
             font-weight: 700;
             color: var(--text-main);
             margin-bottom: 20px;
+            transition: color 0.3s;
         }
 
         /* FORMULARIO DE CREACIÓN */
@@ -131,6 +132,12 @@
             pointer-events: none;
         }
 
+        /* BOTONES DE PANEL IZQUIERDO */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
         .btn-save {
             background-color: var(--accent);
             color: white;
@@ -140,12 +147,41 @@
             font-weight: 600;
             font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.2s;
-            width: 100%;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-grow: 1;
         }
 
         .btn-save:hover {
             background-color: var(--accent-hover);
+        }
+        
+        .btn-save:active {
+            transform: scale(0.98);
+        }
+
+        .btn-save.update-mode {
+            background-color: #059669; /* Verde oscuro para edición */
+        }
+        
+        .btn-save.update-mode:hover {
+            background-color: #047857;
+        }
+
+        .btn-cancel {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: none; /* Oculto por defecto */
+        }
+
+        .btn-cancel:hover {
+            background-color: #e5e7eb;
         }
 
         /* PANEL DE REPOSITORIO */
@@ -211,12 +247,17 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         }
 
         .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .card.editing {
+            border-color: #059669;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
         }
 
         .card-header {
@@ -291,6 +332,23 @@
         .card-actions {
             display: flex;
             justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-edit:hover {
+            background-color: #e5e7eb;
         }
 
         .btn-delete {
@@ -334,7 +392,7 @@
 <body>
 
     <aside class="creator-panel">
-        <h2>Registrar Nuevo Speech</h2>
+        <h2 id="panelTitle">Registrar Nuevo Speech</h2>
         
         <div class="input-group">
             <input type="text" id="docTitle" class="input-field" placeholder="Título del speech" autocomplete="off">
@@ -356,7 +414,10 @@
             <div id="docEditor" class="rich-editor" contenteditable="true" data-placeholder="Escribe o pega aquí el speech respetando su formato original..."></div>
         </div>
 
-        <button class="btn-save" onclick="saveDocument()">Guardar Speech</button>
+        <div class="action-buttons">
+            <button id="btnCancelEdit" class="btn-cancel" onclick="cancelEdit()">Cancelar</button>
+            <button id="btnSaveMain" class="btn-save" onclick="saveDocument()">Guardar Speech</button>
+        </div>
     </aside>
 
     <main class="repo-panel">
@@ -369,12 +430,13 @@
             </div>
     </main>
 
-    <div id="toast" class="toast">Speech copiado con formato</div>
+    <div id="toast" class="toast">Notificación</div>
 
     <script>
         const STORAGE_KEY = 'formatvault_speech_db';
         let database = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
         let activeFilter = 'TODOS';
+        let editingId = null; // Variable para controlar si estamos en modo edición
 
         // Inicializar
         window.onload = () => {
@@ -385,7 +447,7 @@
         // Atajo Ctrl + F para enfocar el buscador
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-                e.preventDefault(); // Evita que se abra el buscador nativo del navegador
+                e.preventDefault();
                 document.getElementById('searchInput').focus();
             }
         });
@@ -396,7 +458,59 @@
             document.getElementById('docEditor').focus();
         }
 
-        // Guardar documento
+        // Cargar documento en el panel izquierdo para editar
+        function editDocument(id) {
+            const doc = database.find(d => d.id === id);
+            if (!doc) return;
+
+            // Rellenar campos
+            document.getElementById('docTitle').value = doc.title;
+            document.getElementById('docCategory').value = doc.category;
+            document.getElementById('docEditor').innerHTML = doc.content;
+
+            // Cambiar estado a modo edición
+            editingId = id;
+            
+            const titleEl = document.getElementById('panelTitle');
+            const saveBtn = document.getElementById('btnSaveMain');
+            
+            titleEl.innerText = "Editar Speech";
+            titleEl.style.color = "#059669";
+            
+            saveBtn.innerText = "Actualizar Speech";
+            saveBtn.classList.add('update-mode');
+            
+            document.getElementById('btnCancelEdit').style.display = "block";
+
+            // Volver a renderizar para resaltar la tarjeta que se está editando
+            renderGrid();
+        }
+
+        // Cancelar la edición
+        function cancelEdit() {
+            editingId = null;
+            
+            // Limpiar campos
+            document.getElementById('docTitle').value = '';
+            document.getElementById('docCategory').value = '';
+            document.getElementById('docEditor').innerHTML = '';
+
+            // Restaurar diseño original
+            const titleEl = document.getElementById('panelTitle');
+            const saveBtn = document.getElementById('btnSaveMain');
+            
+            titleEl.innerText = "Registrar Nuevo Speech";
+            titleEl.style.color = "var(--text-main)";
+            
+            saveBtn.innerText = "Guardar Speech";
+            saveBtn.classList.remove('update-mode');
+            
+            document.getElementById('btnCancelEdit').style.display = "none";
+            
+            renderGrid();
+        }
+
+        // Guardar o Actualizar documento
         function saveDocument() {
             const title = document.getElementById('docTitle').value.trim();
             const category = document.getElementById('docCategory').value.trim().toUpperCase() || 'GENERAL';
@@ -407,23 +521,36 @@
                 return;
             }
 
-            const newDoc = {
-                id: Date.now().toString(),
-                title: title,
-                category: category,
-                content: content,
-                timestamp: new Date().toISOString()
-            };
+            if (editingId) {
+                // Actualizar registro existente
+                const index = database.findIndex(d => d.id === editingId);
+                if (index > -1) {
+                    database[index].title = title;
+                    database[index].category = category;
+                    database[index].content = content;
+                    database[index].timestamp = new Date().toISOString();
+                }
+                showToast("Speech actualizado exitosamente");
+                cancelEdit(); // Limpia y restaura el formulario
+            } else {
+                // Crear registro nuevo
+                const newDoc = {
+                    id: Date.now().toString(),
+                    title: title,
+                    category: category,
+                    content: content,
+                    timestamp: new Date().toISOString()
+                };
+                database.unshift(newDoc);
+                showToast("Speech guardado exitosamente");
+                
+                // Limpiar formulario directamente
+                document.getElementById('docTitle').value = '';
+                document.getElementById('docCategory').value = '';
+                document.getElementById('docEditor').innerHTML = '';
+            }
 
-            database.unshift(newDoc); // Agregar al inicio
             localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
-            
-            // Limpiar formulario
-            document.getElementById('docTitle').value = '';
-            document.getElementById('docCategory').value = '';
-            document.getElementById('docEditor').innerHTML = '';
-            
-            showToast("Speech guardado exitosamente");
             renderFilters();
             renderGrid();
         }
@@ -433,6 +560,10 @@
             if (confirm("¿Estás seguro de eliminar este speech permanentemente?")) {
                 database = database.filter(doc => doc.id !== id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+                
+                // Si eliminamos el documento que estábamos editando, cancelamos la edición
+                if (editingId === id) cancelEdit();
+                
                 renderFilters();
                 renderGrid();
             }
@@ -460,7 +591,7 @@
                 
                 // Feedback visual en el cuadro
                 const originalBg = boxElement.style.backgroundColor;
-                boxElement.style.backgroundColor = "#dcfce7"; // Color verde claro de éxito
+                boxElement.style.backgroundColor = "#dcfce7";
                 boxElement.style.borderColor = "#10b981";
                 
                 showToast("Speech copiado al portapapeles");
@@ -491,7 +622,6 @@
         // Renderizar botones de etiquetas (Filtros)
         function renderFilters() {
             const container = document.getElementById('filtersContainer');
-            // Obtener categorías únicas
             const categories = [...new Set(database.map(doc => doc.category).filter(Boolean))].sort();
             
             let html = `<button class="filter-btn ${activeFilter === 'TODOS' ? 'active' : ''}" onclick="setFilter('TODOS')">Todos</button>`;
@@ -506,8 +636,8 @@
         // Aplicar filtro al hacer click en una etiqueta
         function setFilter(category) {
             activeFilter = category;
-            renderFilters(); // Actualizar estado visual de los botones
-            renderGrid();    // Filtrar las tarjetas
+            renderFilters();
+            renderGrid();
         }
 
         // Renderizar la grilla de tarjetas
@@ -529,7 +659,7 @@
             }
 
             grid.innerHTML = filteredDocs.map(doc => `
-                <div class="card">
+                <div class="card ${editingId === doc.id ? 'editing' : ''}">
                     <div class="card-header">
                         <div>
                             <div class="card-title">${doc.title}</div>
@@ -541,6 +671,7 @@
                         ${doc.content}
                     </div>
                     <div class="card-actions">
+                        <button class="btn-edit" onclick="editDocument('${doc.id}')">Editar</button>
                         <button class="btn-delete" onclick="deleteDocument('${doc.id}')">Eliminar</button>
                     </div>
                 </div>
