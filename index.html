@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormatVault - Gestor de Speechs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* DISEÑO DIVIDIDO */
+        .creator-panel {
+            width: 40%;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+
+        .repo-panel {
+            width: 60%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+
+        /* FORMULARIO DE CREACIÓN */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background-color: #f9fafb;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #fff;
+        }
+
+        /* EDITOR RICH TEXT */
+        .editor-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
+
+        .toolbar {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background-color: #f9fafb;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .tool-btn {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .tool-btn:hover {
+            background-color: #e5e7eb;
+            color: var(--text-main);
+        }
+
+        .rich-editor {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            outline: none;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .rich-editor:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .btn-save {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        .btn-save:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* PANEL DE REPOSITORIO */
+        .search-bar {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        /* BOTONES DE ETIQUETAS (FILTROS) */
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background-color: #f3f4f6;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .filter-btn:hover {
+            background-color: #e5e7eb;
+            color: var(--text-main);
+        }
+
+        .filter-btn.active {
+            background-color: var(--text-main);
+            color: white;
+            border-color: var(--text-main);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .card-category {
+            font-size: 0.75rem;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* CUADRO DEL SPEECH (CLICK PARA COPIAR) */
+        .speech-box {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            flex-grow: 1;
+            max-height: 200px;
+            overflow-y: auto;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .speech-box:hover {
+            background-color: #eff6ff;
+            border-color: var(--accent);
+            border-style: solid;
+        }
+
+        .speech-box:active {
+            transform: scale(0.98);
+        }
+
+        .copy-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .speech-box:hover .copy-hint {
+            opacity: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: #fca5a5;
+        }
+
+        /* NOTIFICACIÓN */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--text-main);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="creator-panel">
+        <h2>Registrar Nuevo Speech</h2>
+        
+        <div class="input-group">
+            <input type="text" id="docTitle" class="input-field" placeholder="Título del speech" autocomplete="off">
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="docCategory" class="input-field" placeholder="Etiqueta (Ej. Pasos, Derivación, Cierre)" autocomplete="off">
+        </div>
+
+        <div class="editor-container">
+            <div class="toolbar">
+                <button class="tool-btn" onclick="execCmd('bold')" title="Negrita">B</button>
+                <button class="tool-btn" onclick="execCmd('italic')" title="Cursiva">I</button>
+                <button class="tool-btn" onclick="execCmd('underline')" title="Subrayado">U</button>
+                <button class="tool-btn" onclick="execCmd('insertUnorderedList')" title="Lista Viñetas">Lista</button>
+                <button class="tool-btn" onclick="execCmd('insertOrderedList')" title="Lista Numerada">1. Lista</button>
+                <input type="color" id="colorPicker" style="border:none; width:30px; height:30px; cursor:pointer;" onchange="execCmd('foreColor', this.value)" title="Color de texto">
+            </div>
+            <div id="docEditor" class="rich-editor" contenteditable="true" data-placeholder="Escribe o pega aquí el speech respetando su formato original..."></div>
+        </div>
+
+        <button class="btn-save" onclick="saveDocument()">Guardar Speech</button>
+    </aside>
+
+    <main class="repo-panel">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar por título, categoría o contenido (Presiona Ctrl + F)" oninput="renderGrid()">
+        
+        <div id="filtersContainer" class="filters-container">
+            </div>
+        
+        <div id="grid" class="cards-grid">
+            </div>
+    </main>
+
+    <div id="toast" class="toast">Speech copiado con formato</div>
+
+    <script>
+        const STORAGE_KEY = 'formatvault_speech_db';
+        let database = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let activeFilter = 'TODOS';
+
+        // Inicializar
+        window.onload = () => {
+            renderFilters();
+            renderGrid();
+        };
+
+        // Atajo Ctrl + F para enfocar el buscador
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault(); // Evita que se abra el buscador nativo del navegador
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        // Comandos del editor Rich Text
+        function execCmd(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('docEditor').focus();
+        }
+
+        // Guardar documento
+        function saveDocument() {
+            const title = document.getElementById('docTitle').value.trim();
+            const category = document.getElementById('docCategory').value.trim().toUpperCase() || 'GENERAL';
+            const content = document.getElementById('docEditor').innerHTML;
+
+            if (!title) {
+                alert("Por favor, ingresa un título para el speech.");
+                return;
+            }
+
+            const newDoc = {
+                id: Date.now().toString(),
+                title: title,
+                category: category,
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+
+            database.unshift(newDoc); // Agregar al inicio
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+            
+            // Limpiar formulario
+            document.getElementById('docTitle').value = '';
+            document.getElementById('docCategory').value = '';
+            document.getElementById('docEditor').innerHTML = '';
+            
+            showToast("Speech guardado exitosamente");
+            renderFilters();
+            renderGrid();
+        }
+
+        // Eliminar documento
+        function deleteDocument(id) {
+            if (confirm("¿Estás seguro de eliminar este speech permanentemente?")) {
+                database = database.filter(doc => doc.id !== id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+                renderFilters();
+                renderGrid();
+            }
+        }
+
+        // Función central para copiar al hacer click en el cuadro del speech
+        async function copyContent(id, boxElement) {
+            const doc = database.find(d => d.id === id);
+            if (!doc) return;
+
+            try {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = doc.content;
+                const plainText = tempDiv.innerText || tempDiv.textContent;
+
+                const blobHtml = new Blob([doc.content], { type: "text/html" });
+                const blobTexto = new Blob([plainText], { type: "text/plain" });
+
+                const clipboardItem = new ClipboardItem({
+                    "text/html": blobHtml,
+                    "text/plain": blobTexto
+                });
+
+                await navigator.clipboard.write([clipboardItem]);
+                
+                // Feedback visual en el cuadro
+                const originalBg = boxElement.style.backgroundColor;
+                boxElement.style.backgroundColor = "#dcfce7"; // Color verde claro de éxito
+                boxElement.style.borderColor = "#10b981";
+                
+                showToast("Speech copiado al portapapeles");
+
+                setTimeout(() => {
+                    boxElement.style.backgroundColor = originalBg;
+                    boxElement.style.borderColor = "";
+                }, 1000);
+
+            } catch (err) {
+                console.error("Error al copiar:", err);
+                alert("Error al copiar. Verifica que la página esté en un entorno seguro (HTTPS o localhost).");
+            }
+        }
+
+        // Normalizar texto para ignorar tildes y mayúsculas en la búsqueda
+        function normalizeText(text) {
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        // Utilidad para limpiar HTML en la búsqueda
+        function stripHTML(html) {
+            const tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        }
+
+        // Renderizar botones de etiquetas (Filtros)
+        function renderFilters() {
+            const container = document.getElementById('filtersContainer');
+            // Obtener categorías únicas
+            const categories = [...new Set(database.map(doc => doc.category).filter(Boolean))].sort();
+            
+            let html = `<button class="filter-btn ${activeFilter === 'TODOS' ? 'active' : ''}" onclick="setFilter('TODOS')">Todos</button>`;
+            
+            categories.forEach(cat => {
+                html += `<button class="filter-btn ${activeFilter === cat ? 'active' : ''}" onclick="setFilter('${cat}')">${cat}</button>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Aplicar filtro al hacer click en una etiqueta
+        function setFilter(category) {
+            activeFilter = category;
+            renderFilters(); // Actualizar estado visual de los botones
+            renderGrid();    // Filtrar las tarjetas
+        }
+
+        // Renderizar la grilla de tarjetas
+        function renderGrid() {
+            const query = normalizeText(document.getElementById('searchInput').value);
+            const grid = document.getElementById('grid');
+            
+            const filteredDocs = database.filter(doc => {
+                const searchString = normalizeText(doc.title + " " + doc.category + " " + stripHTML(doc.content));
+                const matchesSearch = searchString.includes(query);
+                const matchesFilter = activeFilter === 'TODOS' || doc.category === activeFilter;
+                
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filteredDocs.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #6b7280; padding: 40px;">No se encontraron speechs.</div>';
+                return;
+            }
+
+            grid.innerHTML = filteredDocs.map(doc => `
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${doc.title}</div>
+                            <span class="card-category">${doc.category}</span>
+                        </div>
+                    </div>
+                    <div class="speech-box" onclick="copyContent('${doc.id}', this)">
+                        <div class="copy-hint">Copiar</div>
+                        ${doc.content}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-delete" onclick="deleteDocument('${doc.id}')">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mostrar notificación (Toast)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
