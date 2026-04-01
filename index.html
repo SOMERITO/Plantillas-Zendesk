@@ -30,7 +30,7 @@
 
         /* DISEÑO DIVIDIDO */
         .creator-panel {
-            width: 40%;
+            width: 45%;
             background-color: var(--panel-bg);
             border-right: 1px solid var(--border);
             padding: 30px;
@@ -41,7 +41,7 @@
         }
 
         .repo-panel {
-            width: 60%;
+            width: 55%;
             padding: 30px;
             display: flex;
             flex-direction: column;
@@ -80,7 +80,7 @@
             background-color: #fff;
         }
 
-        /* EDITOR RICH TEXT */
+        /* EDITOR RICH TEXT AVANZADO */
         .editor-container {
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -89,16 +89,30 @@
             flex-grow: 1;
             margin-bottom: 20px;
             background-color: #fff;
+            overflow: hidden;
         }
 
         .toolbar {
             padding: 10px;
             border-bottom: 1px solid var(--border);
-            background-color: #f9fafb;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            background-color: #f8fafc;
             display: flex;
-            gap: 5px;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .tool-divider {
+            width: 1px;
+            height: 24px;
+            background-color: #cbd5e1;
+            margin: 0 4px;
         }
 
         .tool-btn {
@@ -106,20 +120,63 @@
             border: 1px solid transparent;
             border-radius: 4px;
             cursor: pointer;
-            padding: 6px 12px;
-            font-weight: 600;
+            padding: 6px;
             color: var(--text-muted);
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            font-size: 1rem;
         }
 
         .tool-btn:hover {
-            background-color: #e5e7eb;
+            background-color: #e2e8f0;
             color: var(--text-main);
+        }
+
+        .tool-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tool-color-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tool-color-wrapper:hover {
+            background-color: #e2e8f0;
+        }
+
+        .tool-color {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #cbd5e1;
+            pointer-events: none;
         }
 
         .rich-editor {
             flex-grow: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
             outline: none;
             font-size: 0.95rem;
@@ -160,7 +217,7 @@
         }
 
         .btn-save.update-mode {
-            background-color: #059669; /* Verde oscuro para edición */
+            background-color: #059669;
         }
         
         .btn-save.update-mode:hover {
@@ -177,7 +234,7 @@
             font-size: 1rem;
             cursor: pointer;
             transition: 0.2s;
-            display: none; /* Oculto por defecto */
+            display: none;
         }
 
         .btn-cancel:hover {
@@ -201,7 +258,6 @@
             border-color: var(--accent);
         }
 
-        /* BOTONES DE ETIQUETAS (FILTROS) */
         .filters-container {
             display: flex;
             flex-wrap: wrap;
@@ -283,7 +339,6 @@
             text-transform: uppercase;
         }
 
-        /* CUADRO DEL SPEECH (CLICK PARA COPIAR) */
         .speech-box {
             background-color: #f8fafc;
             border: 2px dashed #cbd5e1;
@@ -367,7 +422,6 @@
             background-color: #fca5a5;
         }
 
-        /* NOTIFICACIÓN */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -404,13 +458,74 @@
 
         <div class="editor-container">
             <div class="toolbar">
-                <button class="tool-btn" onclick="execCmd('bold')" title="Negrita">B</button>
-                <button class="tool-btn" onclick="execCmd('italic')" title="Cursiva">I</button>
-                <button class="tool-btn" onclick="execCmd('underline')" title="Subrayado">U</button>
-                <button class="tool-btn" onclick="execCmd('insertUnorderedList')" title="Lista Viñetas">Lista</button>
-                <button class="tool-btn" onclick="execCmd('insertOrderedList')" title="Lista Numerada">1. Lista</button>
-                <input type="color" id="colorPicker" style="border:none; width:30px; height:30px; cursor:pointer;" onchange="execCmd('foreColor', this.value)" title="Color de texto">
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('undo')" title="Deshacer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('redo')" title="Rehacer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('bold')" title="Negrita" style="font-weight: 800;">B</button>
+                    <button class="tool-btn" onclick="execCmd('italic')" title="Cursiva" style="font-style: italic;">I</button>
+                    <button class="tool-btn" onclick="execCmd('underline')" title="Subrayado" style="text-decoration: underline;">U</button>
+                    <button class="tool-btn" onclick="execCmd('strikethrough')" title="Tachado" style="text-decoration: line-through;">S</button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <div class="tool-color-wrapper" title="Color de Texto">
+                        <div class="color-indicator" style="background-color: #000000;" id="textColorInd"></div>
+                        <input type="color" class="tool-color" onchange="applyColor('foreColor', this.value, 'textColorInd')">
+                    </div>
+                    <div class="tool-color-wrapper" title="Color de Resaltado">
+                        <div class="color-indicator" style="background-color: #ffff00;" id="bgColorInd"></div>
+                        <input type="color" class="tool-color" value="#ffff00" onchange="applyColor('hiliteColor', this.value, 'bgColorInd')">
+                    </div>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('justifyLeft')" title="Alinear a la Izquierda">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyCenter')" title="Centrar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyRight')" title="Alinear a la Derecha">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyFull')" title="Justificar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('insertUnorderedList')" title="Viñetas">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('insertOrderedList')" title="Numeración">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M3 6h3v4H3zM3 14h3v4H3z"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="clearFormat()" title="Borrar formato del texto seleccionado (Limpia pegados externos)" style="color: #ef4444;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h14M14 4v16M3 21l18-18"/></svg>
+                    </button>
+                </div>
             </div>
+
             <div id="docEditor" class="rich-editor" contenteditable="true" data-placeholder="Escribe o pega aquí el speech respetando su formato original..."></div>
         </div>
 
@@ -436,9 +551,8 @@
         const STORAGE_KEY = 'formatvault_speech_db';
         let database = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
         let activeFilter = 'TODOS';
-        let editingId = null; // Variable para controlar si estamos en modo edición
+        let editingId = null;
 
-        // Inicializar
         window.onload = () => {
             renderFilters();
             renderGrid();
@@ -452,9 +566,28 @@
             }
         });
 
-        // Comandos del editor Rich Text
+        // Comandos estándar del editor
         function execCmd(command, value = null) {
             document.execCommand(command, false, value);
+            document.getElementById('docEditor').focus();
+        }
+
+        // Comandos de color que actualizan el indicador visual
+        function applyColor(command, value, indicatorId) {
+            document.getElementById(indicatorId).style.backgroundColor = value;
+            execCmd(command, value);
+        }
+
+        // Función avanzada para borrar formato (limpia texto pegado de webs/Word)
+        function clearFormat() {
+            // 1. Comando estándar para remover negritas, cursivas, etc.
+            document.execCommand('removeFormat', false, null);
+            // 2. Desvincular hipervínculos
+            document.execCommand('unlink', false, null);
+            // 3. Limpiar color de fondo y de texto específico
+            document.execCommand('hiliteColor', false, 'transparent');
+            document.execCommand('foreColor', false, '#111827');
+            
             document.getElementById('docEditor').focus();
         }
 
@@ -463,12 +596,10 @@
             const doc = database.find(d => d.id === id);
             if (!doc) return;
 
-            // Rellenar campos
             document.getElementById('docTitle').value = doc.title;
             document.getElementById('docCategory').value = doc.category;
             document.getElementById('docEditor').innerHTML = doc.content;
 
-            // Cambiar estado a modo edición
             editingId = id;
             
             const titleEl = document.getElementById('panelTitle');
@@ -482,7 +613,6 @@
             
             document.getElementById('btnCancelEdit').style.display = "block";
 
-            // Volver a renderizar para resaltar la tarjeta que se está editando
             renderGrid();
         }
 
@@ -490,12 +620,10 @@
         function cancelEdit() {
             editingId = null;
             
-            // Limpiar campos
             document.getElementById('docTitle').value = '';
             document.getElementById('docCategory').value = '';
             document.getElementById('docEditor').innerHTML = '';
 
-            // Restaurar diseño original
             const titleEl = document.getElementById('panelTitle');
             const saveBtn = document.getElementById('btnSaveMain');
             
@@ -522,7 +650,6 @@
             }
 
             if (editingId) {
-                // Actualizar registro existente
                 const index = database.findIndex(d => d.id === editingId);
                 if (index > -1) {
                     database[index].title = title;
@@ -531,9 +658,8 @@
                     database[index].timestamp = new Date().toISOString();
                 }
                 showToast("Speech actualizado exitosamente");
-                cancelEdit(); // Limpia y restaura el formulario
+                cancelEdit(); 
             } else {
-                // Crear registro nuevo
                 const newDoc = {
                     id: Date.now().toString(),
                     title: title,
@@ -544,7 +670,6 @@
                 database.unshift(newDoc);
                 showToast("Speech guardado exitosamente");
                 
-                // Limpiar formulario directamente
                 document.getElementById('docTitle').value = '';
                 document.getElementById('docCategory').value = '';
                 document.getElementById('docEditor').innerHTML = '';
@@ -561,7 +686,6 @@
                 database = database.filter(doc => doc.id !== id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
                 
-                // Si eliminamos el documento que estábamos editando, cancelamos la edición
                 if (editingId === id) cancelEdit();
                 
                 renderFilters();
@@ -589,7 +713,6 @@
 
                 await navigator.clipboard.write([clipboardItem]);
                 
-                // Feedback visual en el cuadro
                 const originalBg = boxElement.style.backgroundColor;
                 boxElement.style.backgroundColor = "#dcfce7";
                 boxElement.style.borderColor = "#10b981";
@@ -607,19 +730,16 @@
             }
         }
 
-        // Normalizar texto para ignorar tildes y mayúsculas en la búsqueda
         function normalizeText(text) {
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         }
 
-        // Utilidad para limpiar HTML en la búsqueda
         function stripHTML(html) {
             const tmp = document.createElement("DIV");
             tmp.innerHTML = html;
             return tmp.textContent || tmp.innerText || "";
         }
 
-        // Renderizar botones de etiquetas (Filtros)
         function renderFilters() {
             const container = document.getElementById('filtersContainer');
             const categories = [...new Set(database.map(doc => doc.category).filter(Boolean))].sort();
@@ -633,14 +753,12 @@
             container.innerHTML = html;
         }
 
-        // Aplicar filtro al hacer click en una etiqueta
         function setFilter(category) {
             activeFilter = category;
             renderFilters();
             renderGrid();
         }
 
-        // Renderizar la grilla de tarjetas
         function renderGrid() {
             const query = normalizeText(document.getElementById('searchInput').value);
             const grid = document.getElementById('grid');
@@ -678,7 +796,6 @@
             `).join('');
         }
 
-        // Mostrar notificación (Toast)
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.innerText = message;
