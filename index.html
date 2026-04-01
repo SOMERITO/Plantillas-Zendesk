@@ -28,6 +28,22 @@
             overflow: hidden;
         }
 
+        /* SCROLLBAR PERSONALIZADO */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         /* DISEÑO DIVIDIDO */
         .creator-panel {
             width: 45%;
@@ -180,13 +196,38 @@
             overflow-y: auto;
             outline: none;
             font-size: 0.95rem;
-            line-height: 1.6;
         }
 
         .rich-editor:empty:before {
             content: attr(data-placeholder);
             color: #9ca3af;
             pointer-events: none;
+        }
+
+        /* FORZAR FORMATO COMPACTO EN SPEECHS (Ignora estilos pegados) */
+        .speech-box *, .rich-editor * {
+            line-height: 1.5 !important;
+        }
+
+        .speech-box p, .speech-box div, 
+        .rich-editor p, .rich-editor div {
+            margin: 0 0 10px 0 !important;
+            padding: 0 !important;
+        }
+
+        .speech-box p:last-child, .speech-box div:last-child,
+        .rich-editor p:last-child, .rich-editor div:last-child {
+            margin-bottom: 0 !important;
+        }
+
+        .speech-box ul, .speech-box ol,
+        .rich-editor ul, .rich-editor ol {
+            margin: 0 0 10px 0 !important;
+            padding-left: 20px !important;
+        }
+
+        .speech-box li, .rich-editor li {
+            margin-bottom: 4px !important;
         }
 
         /* BOTONES DE PANEL IZQUIERDO */
@@ -578,16 +619,12 @@
             execCmd(command, value);
         }
 
-        // Función avanzada para borrar formato (limpia texto pegado de webs/Word)
+        // Función avanzada para borrar formato
         function clearFormat() {
-            // 1. Comando estándar para remover negritas, cursivas, etc.
             document.execCommand('removeFormat', false, null);
-            // 2. Desvincular hipervínculos
             document.execCommand('unlink', false, null);
-            // 3. Limpiar color de fondo y de texto específico
             document.execCommand('hiliteColor', false, 'transparent');
             document.execCommand('foreColor', false, '#111827');
-            
             document.getElementById('docEditor').focus();
         }
 
