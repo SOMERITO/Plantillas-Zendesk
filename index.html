@@ -209,9 +209,10 @@
             line-height: 1.5 !important;
         }
 
+        /* Márgenes precisos para simular el "Enter" de forma estándar */
         .speech-box p, .speech-box div, 
         .rich-editor p, .rich-editor div {
-            margin: 0 0 10px 0 !important;
+            margin: 0 0 12px 0 !important;
             padding: 0 !important;
         }
 
@@ -222,7 +223,7 @@
 
         .speech-box ul, .speech-box ol,
         .rich-editor ul, .rich-editor ol {
-            margin: 0 0 10px 0 !important;
+            margin: 0 0 12px 0 !important;
             padding-left: 20px !important;
         }
 
@@ -565,7 +566,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h14M14 4v16M3 21l18-18"/></svg>
                     </button>
                     
-                    <button class="tool-btn" onclick="fixSpacing()" title="Corregir espaciados y estandarizar pegados rebeldes" style="color: #2563eb;">
+                    <button class="tool-btn" onclick="fixSpacing()" title="Varita Mágica: Corrige tamaños, analiza puntos finales y da Enters automáticamente" style="color: #2563eb;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m15 5 4 4"/><path d="M13 7 8.7 11.3a2.1 2.1 0 0 0 0 3l1.4 1.4a2.1 2.1 0 0 0 3 0L17.4 11"/><path d="m8 16-4 4"/><path d="m2 22 2.5-2.5"/>
                         </svg>
@@ -625,7 +626,7 @@
             execCmd(command, value);
         }
 
-        // Función avanzada para borrar formato
+        // Función avanzada para borrar formato manual
         function clearFormat() {
             document.execCommand('removeFormat', false, null);
             document.execCommand('unlink', false, null);
@@ -634,37 +635,61 @@
             document.getElementById('docEditor').focus();
         }
 
-        // NUEVA VERSIÓN REFORZADA: Destruye cualquier título o formato rebelde con atributos extra
+        // VARITA MÁGICA: Analiza "Puntos Finales" vs "Puntos Seguidos" y corrige estructuras PDF/Web
         function fixSpacing() {
             const editor = document.getElementById('docEditor');
             let html = editor.innerHTML;
 
-            // Convertir encabezados (h1 a h6) atrapando los que tengan atributos (id, class, etc)
-            html = html.replace(/<h[1-6][^>]*>/gi, '<div>').replace(/<\/h[1-6]>/gi, '</div>');
-            
-            // Eliminar SPANS que traen fuentes ocultas o colores forzados
-            html = html.replace(/<span[^>]*>/gi, '').replace(/<\/span>/gi, '');
-            
-            // Convertir párrafos a div, atrapando cualquier atributo extra
-            html = html.replace(/<p[^>]*>/gi, '<div>').replace(/<\/p>/gi, '</div>');
-            
-            // Limpiar atributos style y class en cualquier etiqueta que quede
-            html = html.replace(/ style="[^"]*"/gi, '');
-            html = html.replace(/ style='[^']*'/gi, '');
-            html = html.replace(/ class="[^"]*"/gi, '');
-            html = html.replace(/ class='[^']*'/gi, '');
+            // 1. Limpieza extrema de atributos basuras (títulos gigantes, colores forzados)
+            html = html.replace(/ (style|class)="[^"]*"/gi, '');
+            html = html.replace(/ (style|class)='[^']*'/gi, '');
+            html = html.replace(/<\/?span[^>]*>/gi, '');
 
-            // Eliminar negritas que vienen arrastradas (b y strong)
-            html = html.replace(/<b[^>]*>/gi, '').replace(/<\/b>/gi, '');
-            html = html.replace(/<strong[^>]*>/gi, '').replace(/<\/strong>/gi, '');
+            // 2. Convertir TODAS las separaciones estructurales a un salto de línea \n para poder analizar el texto
+            html = html.replace(/<\/?(div|p|h[1-6])[^>]*>/gi, '\n');
+            html = html.replace(/<br\s*\/?>/gi, '\n');
 
-            // Reducir la basura estructural y saltos masivos
-            html = html.replace(/<div[^>]*>\s*<br\s*\/?>\s*<\/div>/gi, '<br>');
-            html = html.replace(/<div[^>]*>\s*<\/div>/gi, '');
-            html = html.replace(/(<br\s*\/?>){3,}/gi, '<br><br>');
+            // 3. Procesar las líneas: Inteligencia de puntuación
+            let lineas = html.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let resultado = [];
+            let parrafoActual = "";
 
-            editor.innerHTML = html;
-            showToast("Tamaños estandarizados con éxito");
+            for (let i = 0; i < lineas.length; i++) {
+                let linea = lineas[i];
+                
+                // Proteger elementos de lista para que no se junten en un solo bloque
+                if (linea.startsWith('<li') || linea.startsWith('</ul') || linea.startsWith('<ul')) {
+                    if (parrafoActual) {
+                        resultado.push(`<div>${parrafoActual}</div>`);
+                        parrafoActual = "";
+                    }
+                    resultado.push(linea);
+                    continue;
+                }
+
+                if (parrafoActual === "") {
+                    parrafoActual = linea;
+                } else {
+                    // CEREBRO DE PUNTUACIÓN:
+                    // Si el párrafo actual NO termina en un signo de cierre fuerte (Punto, dos puntos, etc.)
+                    // asumimos que la línea se cortó a la mitad por error. Lo unimos con un espacio (Punto seguido virtual).
+                    if (!parrafoActual.match(/[.:;?!>]$/)) {
+                        parrafoActual += " " + linea;
+                    } else {
+                        // Si termina en un punto o dos puntos, ES UN PUNTO Y APARTE.
+                        // Guardamos el párrafo actual en un <div>, lo que forzará el "Enter" visual.
+                        resultado.push(`<div>${parrafoActual}</div>`);
+                        parrafoActual = linea;
+                    }
+                }
+            }
+            // Guardar el último párrafo si quedó pendiente
+            if (parrafoActual) {
+                resultado.push(`<div>${parrafoActual}</div>`);
+            }
+
+            editor.innerHTML = resultado.join('');
+            showToast("Análisis de puntos y espacios completado");
             editor.focus();
         }
 
