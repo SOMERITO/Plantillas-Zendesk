@@ -389,9 +389,10 @@
             border-color: var(--text-main);
         }
 
+        /* GRILLA LINEAL VERTICAL */
         .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            display: flex;
+            flex-direction: column; /* Diseño en una sola columna vertical */
             gap: 20px;
             padding-bottom: 40px;
         }
@@ -441,6 +442,7 @@
             text-transform: uppercase;
         }
 
+        /* CUADRO DEL SPEECH SIN LÍMITE DE ALTURA */
         .speech-box {
             background-color: #f8fafc;
             border: 2px dashed #cbd5e1;
@@ -450,8 +452,7 @@
             color: var(--text-muted);
             margin-bottom: 20px;
             flex-grow: 1;
-            max-height: 200px;
-            overflow-y: auto;
+            /* Se eliminó el max-height para que muestre toda la información */
             cursor: pointer;
             position: relative;
             transition: 0.2s;
