@@ -204,7 +204,7 @@
             pointer-events: none;
         }
 
-        /* FORZAR FORMATO COMPACTO EN SPEECHS (Ignora estilos pegados) */
+        /* FORZAR FORMATO COMPACTO EN SPEECHS */
         .speech-box *, .rich-editor * {
             line-height: 1.5 !important;
         }
@@ -565,7 +565,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h14M14 4v16M3 21l18-18"/></svg>
                     </button>
                     
-                    <button class="tool-btn" onclick="fixSpacing()" title="Corregir espaciados y quitar títulos grandes" style="color: #2563eb;">
+                    <button class="tool-btn" onclick="fixSpacing()" title="Corregir espaciados y estandarizar pegados rebeldes" style="color: #2563eb;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m15 5 4 4"/><path d="M13 7 8.7 11.3a2.1 2.1 0 0 0 0 3l1.4 1.4a2.1 2.1 0 0 0 3 0L17.4 11"/><path d="m8 16-4 4"/><path d="m2 22 2.5-2.5"/>
                         </svg>
@@ -634,23 +634,37 @@
             document.getElementById('docEditor').focus();
         }
 
-        // NUEVA VERSIÓN: Corregir espaciados y destruir tamaños gigantes
+        // NUEVA VERSIÓN REFORZADA: Destruye cualquier título o formato rebelde con atributos extra
         function fixSpacing() {
             const editor = document.getElementById('docEditor');
             let html = editor.innerHTML;
 
+            // Convertir encabezados (h1 a h6) atrapando los que tengan atributos (id, class, etc)
+            html = html.replace(/<h[1-6][^>]*>/gi, '<div>').replace(/<\/h[1-6]>/gi, '</div>');
+            
+            // Eliminar SPANS que traen fuentes ocultas o colores forzados
+            html = html.replace(/<span[^>]*>/gi, '').replace(/<\/span>/gi, '');
+            
+            // Convertir párrafos a div, atrapando cualquier atributo extra
+            html = html.replace(/<p[^>]*>/gi, '<div>').replace(/<\/p>/gi, '</div>');
+            
+            // Limpiar atributos style y class en cualquier etiqueta que quede
             html = html.replace(/ style="[^"]*"/gi, '');
+            html = html.replace(/ style='[^']*'/gi, '');
             html = html.replace(/ class="[^"]*"/gi, '');
-            html = html.replace(/<h[1-6]>/gi, '<div>').replace(/<\/h[1-6]>/gi, '</div>');
-            html = html.replace(/<\/?span[^>]*>/gi, '');
-            html = html.replace(/<p>/gi, '<div>').replace(/<\/p>/gi, '</div>');
-            html = html.replace(/<div>\s*<br\s*\/?>\s*<\/div>/gi, '<br>');
-            html = html.replace(/<div>\s*<\/div>/gi, '');
+            html = html.replace(/ class='[^']*'/gi, '');
+
+            // Eliminar negritas que vienen arrastradas (b y strong)
+            html = html.replace(/<b[^>]*>/gi, '').replace(/<\/b>/gi, '');
+            html = html.replace(/<strong[^>]*>/gi, '').replace(/<\/strong>/gi, '');
+
+            // Reducir la basura estructural y saltos masivos
+            html = html.replace(/<div[^>]*>\s*<br\s*\/?>\s*<\/div>/gi, '<br>');
+            html = html.replace(/<div[^>]*>\s*<\/div>/gi, '');
             html = html.replace(/(<br\s*\/?>){3,}/gi, '<br><br>');
-            html = html.replace(/<\/?b>/gi, '').replace(/<\/?strong>/gi, '');
 
             editor.innerHTML = html;
-            showToast("Tamaños y espaciados estandarizados");
+            showToast("Tamaños estandarizados con éxito");
             editor.focus();
         }
 
