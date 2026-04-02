@@ -1,32 +1,872 @@
-// NUEVA VERSIÓN: Corregir espaciados y destruir tamaños gigantes
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormatVault - Gestor de Speechs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SCROLLBAR PERSONALIZADO */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* DISEÑO DIVIDIDO */
+        .creator-panel {
+            width: 45%;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+
+        .repo-panel {
+            width: 55%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        /* FORMULARIO DE CREACIÓN */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background-color: #f9fafb;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #fff;
+        }
+
+        /* EDITOR RICH TEXT AVANZADO */
+        .editor-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background-color: #f8fafc;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .tool-divider {
+            width: 1px;
+            height: 24px;
+            background-color: #cbd5e1;
+            margin: 0 4px;
+        }
+
+        .tool-btn {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px;
+            color: var(--text-muted);
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            font-size: 1rem;
+        }
+
+        .tool-btn:hover {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .tool-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tool-color-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tool-color-wrapper:hover {
+            background-color: #e2e8f0;
+        }
+
+        .tool-color {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #cbd5e1;
+            pointer-events: none;
+        }
+
+        .rich-editor {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .rich-editor:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        /* FORZAR FORMATO COMPACTO EN SPEECHS (Ignora estilos pegados) */
+        .speech-box *, .rich-editor * {
+            line-height: 1.5 !important;
+        }
+
+        .speech-box p, .speech-box div, 
+        .rich-editor p, .rich-editor div {
+            margin: 0 0 10px 0 !important;
+            padding: 0 !important;
+        }
+
+        .speech-box p:last-child, .speech-box div:last-child,
+        .rich-editor p:last-child, .rich-editor div:last-child {
+            margin-bottom: 0 !important;
+        }
+
+        .speech-box ul, .speech-box ol,
+        .rich-editor ul, .rich-editor ol {
+            margin: 0 0 10px 0 !important;
+            padding-left: 20px !important;
+        }
+
+        .speech-box li, .rich-editor li {
+            margin-bottom: 4px !important;
+        }
+
+        /* BOTONES DE PANEL IZQUIERDO */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-save {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-grow: 1;
+        }
+
+        .btn-save:hover {
+            background-color: var(--accent-hover);
+        }
+        
+        .btn-save:active {
+            transform: scale(0.98);
+        }
+
+        .btn-save.update-mode {
+            background-color: #059669;
+        }
+        
+        .btn-save.update-mode:hover {
+            background-color: #047857;
+        }
+
+        .btn-cancel {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #e5e7eb;
+        }
+
+        /* PANEL DE REPOSITORIO */
+        .search-bar {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background-color: #f3f4f6;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .filter-btn:hover {
+            background-color: #e5e7eb;
+            color: var(--text-main);
+        }
+
+        .filter-btn.active {
+            background-color: var(--text-main);
+            color: white;
+            border-color: var(--text-main);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .card.editing {
+            border-color: #059669;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .card-category {
+            font-size: 0.75rem;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .speech-box {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            flex-grow: 1;
+            max-height: 200px;
+            overflow-y: auto;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .speech-box:hover {
+            background-color: #eff6ff;
+            border-color: var(--accent);
+            border-style: solid;
+        }
+
+        .speech-box:active {
+            transform: scale(0.98);
+        }
+
+        .copy-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .speech-box:hover .copy-hint {
+            opacity: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-edit:hover {
+            background-color: #e5e7eb;
+        }
+
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: #fca5a5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--text-main);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="creator-panel">
+        <h2 id="panelTitle">Registrar Nuevo Speech</h2>
+        
+        <div class="input-group">
+            <input type="text" id="docTitle" class="input-field" placeholder="Título del speech" autocomplete="off">
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="docCategory" class="input-field" placeholder="Etiqueta (Ej. Pasos, Derivación, Cierre)" autocomplete="off">
+        </div>
+
+        <div class="editor-container">
+            <div class="toolbar">
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('undo')" title="Deshacer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('redo')" title="Rehacer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('bold')" title="Negrita" style="font-weight: 800;">B</button>
+                    <button class="tool-btn" onclick="execCmd('italic')" title="Cursiva" style="font-style: italic;">I</button>
+                    <button class="tool-btn" onclick="execCmd('underline')" title="Subrayado" style="text-decoration: underline;">U</button>
+                    <button class="tool-btn" onclick="execCmd('strikethrough')" title="Tachado" style="text-decoration: line-through;">S</button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <div class="tool-color-wrapper" title="Color de Texto">
+                        <div class="color-indicator" style="background-color: #000000;" id="textColorInd"></div>
+                        <input type="color" class="tool-color" onchange="applyColor('foreColor', this.value, 'textColorInd')">
+                    </div>
+                    <div class="tool-color-wrapper" title="Color de Resaltado">
+                        <div class="color-indicator" style="background-color: #ffff00;" id="bgColorInd"></div>
+                        <input type="color" class="tool-color" value="#ffff00" onchange="applyColor('hiliteColor', this.value, 'bgColorInd')">
+                    </div>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('justifyLeft')" title="Alinear a la Izquierda">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyCenter')" title="Centrar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyRight')" title="Alinear a la Derecha">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('justifyFull')" title="Justificar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="execCmd('insertUnorderedList')" title="Viñetas">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+                    </button>
+                    <button class="tool-btn" onclick="execCmd('insertOrderedList')" title="Numeración">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M3 6h3v4H3zM3 14h3v4H3z"/></svg>
+                    </button>
+                </div>
+
+                <div class="tool-divider"></div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="clearFormat()" title="Borrar formato del texto seleccionado" style="color: #ef4444;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h14M14 4v16M3 21l18-18"/></svg>
+                    </button>
+                    
+                    <button class="tool-btn" onclick="fixSpacing()" title="Corregir espaciados y quitar títulos grandes" style="color: #2563eb;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 5 4 4"/><path d="M13 7 8.7 11.3a2.1 2.1 0 0 0 0 3l1.4 1.4a2.1 2.1 0 0 0 3 0L17.4 11"/><path d="m8 16-4 4"/><path d="m2 22 2.5-2.5"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="docEditor" class="rich-editor" contenteditable="true" data-placeholder="Escribe o pega aquí el speech respetando su formato original..."></div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="btnCancelEdit" class="btn-cancel" onclick="cancelEdit()">Cancelar</button>
+            <button id="btnSaveMain" class="btn-save" onclick="saveDocument()">Guardar Speech</button>
+        </div>
+    </aside>
+
+    <main class="repo-panel">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar por título, categoría o contenido (Presiona Ctrl + F)" oninput="renderGrid()">
+        
+        <div id="filtersContainer" class="filters-container">
+            </div>
+        
+        <div id="grid" class="cards-grid">
+            </div>
+    </main>
+
+    <div id="toast" class="toast">Notificación</div>
+
+    <script>
+        const STORAGE_KEY = 'formatvault_speech_db';
+        let database = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let activeFilter = 'TODOS';
+        let editingId = null;
+
+        window.onload = () => {
+            renderFilters();
+            renderGrid();
+        };
+
+        // Atajo Ctrl + F para enfocar el buscador
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        // Comandos estándar del editor
+        function execCmd(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('docEditor').focus();
+        }
+
+        // Comandos de color que actualizan el indicador visual
+        function applyColor(command, value, indicatorId) {
+            document.getElementById(indicatorId).style.backgroundColor = value;
+            execCmd(command, value);
+        }
+
+        // Función avanzada para borrar formato
+        function clearFormat() {
+            document.execCommand('removeFormat', false, null);
+            document.execCommand('unlink', false, null);
+            document.execCommand('hiliteColor', false, 'transparent');
+            document.execCommand('foreColor', false, '#111827');
+            document.getElementById('docEditor').focus();
+        }
+
+        // NUEVA VERSIÓN: Corregir espaciados y destruir tamaños gigantes
         function fixSpacing() {
             const editor = document.getElementById('docEditor');
             let html = editor.innerHTML;
 
-            // 1. Quitar todos los atributos style en línea y clases externas
             html = html.replace(/ style="[^"]*"/gi, '');
             html = html.replace(/ class="[^"]*"/gi, '');
-
-            // 2. NUEVO: Convertir títulos gigantes (h1, h2, h3, h4) a bloques normales
             html = html.replace(/<h[1-6]>/gi, '<div>').replace(/<\/h[1-6]>/gi, '</div>');
-            
-            // 3. NUEVO: Limpiar etiquetas <span> que traen fuentes raras
             html = html.replace(/<\/?span[^>]*>/gi, '');
-
-            // 4. Convertir párrafos <p> en <div> para anular márgenes bloque nativos
             html = html.replace(/<p>/gi, '<div>').replace(/<\/p>/gi, '</div>');
-
-            // 5. Limpiar divs vacíos
             html = html.replace(/<div>\s*<br\s*\/?>\s*<\/div>/gi, '<br>');
             html = html.replace(/<div>\s*<\/div>/gi, '');
-
-            // 6. Reducir múltiples saltos de línea a máximo dos
             html = html.replace(/(<br\s*\/?>){3,}/gi, '<br><br>');
-
-            // 7. Quitar negritas y cursivas generales (opcional, para dejar el texto totalmente limpio)
             html = html.replace(/<\/?b>/gi, '').replace(/<\/?strong>/gi, '');
 
             editor.innerHTML = html;
             showToast("Tamaños y espaciados estandarizados");
             editor.focus();
         }
+
+        // Cargar documento en el panel izquierdo para editar
+        function editDocument(id) {
+            const doc = database.find(d => d.id === id);
+            if (!doc) return;
+
+            document.getElementById('docTitle').value = doc.title;
+            document.getElementById('docCategory').value = doc.category;
+            document.getElementById('docEditor').innerHTML = doc.content;
+
+            editingId = id;
+            
+            const titleEl = document.getElementById('panelTitle');
+            const saveBtn = document.getElementById('btnSaveMain');
+            
+            titleEl.innerText = "Editar Speech";
+            titleEl.style.color = "#059669";
+            
+            saveBtn.innerText = "Actualizar Speech";
+            saveBtn.classList.add('update-mode');
+            
+            document.getElementById('btnCancelEdit').style.display = "block";
+
+            renderGrid();
+        }
+
+        // Cancelar la edición
+        function cancelEdit() {
+            editingId = null;
+            
+            document.getElementById('docTitle').value = '';
+            document.getElementById('docCategory').value = '';
+            document.getElementById('docEditor').innerHTML = '';
+
+            const titleEl = document.getElementById('panelTitle');
+            const saveBtn = document.getElementById('btnSaveMain');
+            
+            titleEl.innerText = "Registrar Nuevo Speech";
+            titleEl.style.color = "var(--text-main)";
+            
+            saveBtn.innerText = "Guardar Speech";
+            saveBtn.classList.remove('update-mode');
+            
+            document.getElementById('btnCancelEdit').style.display = "none";
+            
+            renderGrid();
+        }
+
+        // Guardar o Actualizar documento
+        function saveDocument() {
+            const title = document.getElementById('docTitle').value.trim();
+            const category = document.getElementById('docCategory').value.trim().toUpperCase() || 'GENERAL';
+            const content = document.getElementById('docEditor').innerHTML;
+
+            if (!title) {
+                alert("Por favor, ingresa un título para el speech.");
+                return;
+            }
+
+            if (editingId) {
+                const index = database.findIndex(d => d.id === editingId);
+                if (index > -1) {
+                    database[index].title = title;
+                    database[index].category = category;
+                    database[index].content = content;
+                    database[index].timestamp = new Date().toISOString();
+                }
+                showToast("Speech actualizado exitosamente");
+                cancelEdit(); 
+            } else {
+                const newDoc = {
+                    id: Date.now().toString(),
+                    title: title,
+                    category: category,
+                    content: content,
+                    timestamp: new Date().toISOString()
+                };
+                database.unshift(newDoc);
+                showToast("Speech guardado exitosamente");
+                
+                document.getElementById('docTitle').value = '';
+                document.getElementById('docCategory').value = '';
+                document.getElementById('docEditor').innerHTML = '';
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+            renderFilters();
+            renderGrid();
+        }
+
+        // Eliminar documento
+        function deleteDocument(id) {
+            if (confirm("¿Estás seguro de eliminar este speech permanentemente?")) {
+                database = database.filter(doc => doc.id !== id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+                
+                if (editingId === id) cancelEdit();
+                
+                renderFilters();
+                renderGrid();
+            }
+        }
+
+        // Función central para copiar al hacer click en el cuadro del speech
+        async function copyContent(id, boxElement) {
+            const doc = database.find(d => d.id === id);
+            if (!doc) return;
+
+            try {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = doc.content;
+                const plainText = tempDiv.innerText || tempDiv.textContent;
+
+                const blobHtml = new Blob([doc.content], { type: "text/html" });
+                const blobTexto = new Blob([plainText], { type: "text/plain" });
+
+                const clipboardItem = new ClipboardItem({
+                    "text/html": blobHtml,
+                    "text/plain": blobTexto
+                });
+
+                await navigator.clipboard.write([clipboardItem]);
+                
+                const originalBg = boxElement.style.backgroundColor;
+                boxElement.style.backgroundColor = "#dcfce7";
+                boxElement.style.borderColor = "#10b981";
+                
+                showToast("Speech copiado al portapapeles");
+
+                setTimeout(() => {
+                    boxElement.style.backgroundColor = originalBg;
+                    boxElement.style.borderColor = "";
+                }, 1000);
+
+            } catch (err) {
+                console.error("Error al copiar:", err);
+                alert("Error al copiar. Verifica que la página esté en un entorno seguro (HTTPS o localhost).");
+            }
+        }
+
+        function normalizeText(text) {
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        function stripHTML(html) {
+            const tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        }
+
+        function renderFilters() {
+            const container = document.getElementById('filtersContainer');
+            const categories = [...new Set(database.map(doc => doc.category).filter(Boolean))].sort();
+            
+            let html = `<button class="filter-btn ${activeFilter === 'TODOS' ? 'active' : ''}" onclick="setFilter('TODOS')">Todos</button>`;
+            
+            categories.forEach(cat => {
+                html += `<button class="filter-btn ${activeFilter === cat ? 'active' : ''}" onclick="setFilter('${cat}')">${cat}</button>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setFilter(category) {
+            activeFilter = category;
+            renderFilters();
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const query = normalizeText(document.getElementById('searchInput').value);
+            const grid = document.getElementById('grid');
+            
+            const filteredDocs = database.filter(doc => {
+                const searchString = normalizeText(doc.title + " " + doc.category + " " + stripHTML(doc.content));
+                const matchesSearch = searchString.includes(query);
+                const matchesFilter = activeFilter === 'TODOS' || doc.category === activeFilter;
+                
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filteredDocs.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #6b7280; padding: 40px;">No se encontraron speechs.</div>';
+                return;
+            }
+
+            grid.innerHTML = filteredDocs.map(doc => `
+                <div class="card ${editingId === doc.id ? 'editing' : ''}">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${doc.title}</div>
+                            <span class="card-category">${doc.category}</span>
+                        </div>
+                    </div>
+                    <div class="speech-box" onclick="copyContent('${doc.id}', this)">
+                        <div class="copy-hint">Copiar</div>
+                        ${doc.content}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="editDocument('${doc.id}')">Editar</button>
+                        <button class="btn-delete" onclick="deleteDocument('${doc.id}')">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
